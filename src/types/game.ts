@@ -3,14 +3,16 @@
 // ============================================================
 
 export type Season = 'Spring' | 'Summer' | 'Autumn' | 'Winter';
-export type TownId = 'valley_farm' | 'mountain_forge' | 'desert_bazaar' | 'deepwood_camp' | 'capital_city';
+export type TownId = 'valley_farm' | 'mountain_forge' | 'desert_bazaar' | 'deepwood_camp' | 'capital_city' | 'port_harbor' | 'monastery' | 'border_fort';
 export type ItemId =
   | 'wheat' | 'livestock' | 'iron' | 'tools' | 'weapons'
   | 'spices' | 'silk' | 'water' | 'wood' | 'furs'
-  | 'luxury_goods' | 'cloth' | 'food' | 'gold_coin';
+  | 'luxury_goods' | 'cloth' | 'food' | 'gold_coin'
+  | 'fish' | 'salt' | 'rope' | 'wine' | 'herbs' | 'books';
 
 export type VehicleTier = 1 | 2 | 3 | 4;
-export type GameScreen = 'title' | 'town' | 'map' | 'tavern' | 'wainwright' | 'travel' | 'event' | 'game_over' | 'victory';
+export type GameScreen = 'title' | 'town' | 'map' | 'tavern' | 'wainwright' | 'travel' | 'event' | 'game_over' | 'victory' | 'stats';
+export type Weather = 'clear' | 'rain' | 'fog' | 'storm';
 
 export interface ItemDefinition {
   id: ItemId;
@@ -86,6 +88,21 @@ export interface PlayerState {
   guards: Guard[];
   totalDays: number;
   totalProfit: number;
+  // Stats tracking
+  totalTradesMade: number;
+  totalGoldEarned: number;
+  totalGoldSpent: number;
+  totalCargoLost: number;
+  totalGuardsLost: number;
+  totalEventsfaced: number;
+  totalContractsCompleted: number;
+  townsVisited: TownId[];
+  // Reputation per town (-100 to +100)
+  reputation: Partial<Record<TownId, number>>;
+  // Skills / perks
+  skills: string[];
+  xp: number;
+  level: number;
 }
 
 export interface TravelState {
@@ -94,6 +111,7 @@ export interface TravelState {
   totalDays: number;
   currentRouteId: string;
   eventPending: boolean;
+  weather: Weather;
 }
 
 export interface GameEvent {
@@ -133,5 +151,35 @@ export interface GameState {
   pendingEvent: GameEvent | null;
   lastEventResolution: EventResolution | null;
   messageLog: string[];
+  routeWeather: Record<string, Weather>; // "townA:townB" -> weather
+  priceHistory: Record<TownId, Partial<Record<ItemId, number[]>>>; // last N prices per item per town
+  contracts: Contract[];         // available contracts at current town
+  activeContracts: Contract[];   // accepted contracts
+  activeWorldEvents: WorldEvent[];
+}
+
+export interface Contract {
+  id: string;
+  itemId: ItemId;
+  quantity: number;
+  destination: TownId;
+  reward: number;
+  deadlineDay: number;      // absolute day by which to deliver
+  issuedAt: TownId;         // town where contract was picked up
+}
+
+export interface WorldEvent {
+  id: string;
+  title: string;
+  emoji: string;
+  description: string;
+  type: 'war' | 'plague' | 'festival' | 'famine' | 'boom';
+  affectedTowns: TownId[];
+  startDay: number;
+  endDay: number;
+  // Modifiers applied while active
+  demandMultiplier: Partial<Record<ItemId, number>>;
+  productionMultiplier: Partial<Record<ItemId, number>>;
+  dangerModifier: number; // added to route danger for affected towns
 }
 

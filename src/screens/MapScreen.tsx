@@ -1,7 +1,7 @@
 import { useGame } from '../context/GameContext';
 import { TOWNS, TOWN_IDS } from '../data/towns';
 import { TOWN_MAP_POSITIONS, getRoute } from '../data/routes';
-import { calcPrice } from '../engine/gameEngine';
+import { calcPrice, getRouteWeather, WEATHER_INFO, hasSkill } from '../engine/gameEngine';
 import { ITEMS } from '../data/items';
 import type { TownId } from '../types/game';
 import { useState } from 'react';
@@ -197,6 +197,31 @@ export function MapScreen() {
           }}>
             {state.season} · Day {state.currentDay}
           </div>
+
+          {/* World events ticker */}
+          {state.activeWorldEvents.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '6px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: '8px',
+              zIndex: 5,
+            }}>
+              {state.activeWorldEvents.map(ev => (
+                <div key={ev.id} className="badge" style={{
+                  background: ev.type === 'war' || ev.type === 'plague' || ev.type === 'famine' ? 'rgba(138,42,26,0.8)' : 'rgba(26,74,26,0.8)',
+                  border: `1px solid ${ev.type === 'war' || ev.type === 'plague' || ev.type === 'famine' ? 'var(--red)' : 'var(--green-light)'}`,
+                  color: 'var(--parchment)',
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                }}>
+                  {ev.emoji} {ev.title} ({ev.endDay - state.currentDay}d left)
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Info sidebar */}
@@ -213,6 +238,10 @@ function TownTooltip({ townId, fromTown }: { townId: TownId; fromTown: TownId })
   const town = TOWNS[townId];
   const route = getRoute(fromTown, townId);
   const market = state.markets[townId];
+
+  // Weather on route
+  const weather = route ? getRouteWeather(state, fromTown, townId) : 'clear';
+  const weatherInfo = WEATHER_INFO[weather];
 
   // Rumors: top 3 most extreme price items
   const rumors = town.rumorItems.map(itemId => {
@@ -247,8 +276,11 @@ function TownTooltip({ townId, fromTown }: { townId: TownId; fromTown: TownId })
       </div>
       {route && (
         <div style={{ marginBottom: '8px', color: 'var(--parchment)' }}>
-          <div>📅 Distance: <strong>{route.distance} days</strong></div>
-          <div>⚠️ Danger: <strong style={{ color: route.dangerRating > 25 ? '#ff8070' : 'var(--parchment)' }}>{route.dangerRating}%</strong></div>
+          <div>📅 Distance: <strong>{route.distance} days</strong>{weatherInfo.speedMod > 0 && <span style={{ color: '#ff9080' }}> (+{weatherInfo.speedMod} storm)</span>}</div>
+          <div>⚠️ Danger: <strong style={{ color: route.dangerRating + weatherInfo.dangerMod > 25 ? '#ff8070' : 'var(--parchment)' }}>{route.dangerRating + weatherInfo.dangerMod}%</strong>
+            {weatherInfo.dangerMod > 0 && <span style={{ fontSize: '11px', color: '#ff9080' }}> (+{weatherInfo.dangerMod}% weather)</span>}
+          </div>
+          <div>{weatherInfo.emoji} Weather: <strong style={{ color: weather === 'storm' ? '#ff9080' : weather === 'fog' ? '#b0b0d0' : 'var(--parchment)' }}>{weatherInfo.name}</strong></div>
           <div style={{ fontSize: '12px', color: 'var(--parchment-darker)', fontStyle: 'italic' }}>{route.terrainDescription}</div>
         </div>
       )}
@@ -276,11 +308,20 @@ function TravelSidebar({ townId, route, onTravel, onCancel }: {
 }) {
   const { state } = useGame();
   const town = TOWNS[townId];
-  const vehicle = state.player;
-  const dailyFood = 1 + state.player.guards.length;
+  const weather = getRouteWeather(state, state.player.currentTownId, townId);
+  const weatherInfo = WEATHER_INFO[weather];
+  // Pathfinder skill: -1 day travel
+  const pathfinderReduction = hasSkill(state, 'pathfinder') ? 1 : 0;
+  const effectiveDistance = Math.max(1, route.distance + weatherInfo.speedMod - pathfinderReduction);
+  // Scout's Eye skill: -10% danger
+  const scoutReduction = hasSkill(state, 'scouts_eye') ? 10 : 0;
+  const effectiveDanger = Math.max(0, route.dangerRating + weatherInfo.dangerMod - scoutReduction);
+  // Iron Stomach skill: -1 food consumption
+  const ironStomachReduction = hasSkill(state, 'iron_stomach') ? 1 : 0;
+  const dailyFood = Math.max(0, 1 + state.player.guards.length - ironStomachReduction);
   const dailyGold = state.player.guards.reduce((s, g) => s + g.dailyWage, 0);
-  const totalFood = dailyFood * route.distance;
-  const totalGold = dailyGold * route.distance;
+  const totalFood = dailyFood * effectiveDistance;
+  const totalGold = dailyGold * effectiveDistance;
   const hasEnoughFood = state.player.food >= totalFood;
 
   return (
@@ -301,8 +342,9 @@ function TravelSidebar({ townId, route, onTravel, onCancel }: {
       <div className="divider" />
 
       <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <InfoRow icon="📅" label="Journey" value={`${route.distance} days`} />
-        <InfoRow icon="⚠️" label="Danger" value={`${route.dangerRating}%`} valueColor={route.dangerRating > 25 ? '#ff8070' : 'var(--parchment)'} />
+        <InfoRow icon="📅" label="Journey" value={`${effectiveDistance} days`} />
+        <InfoRow icon="⚠️" label="Danger" value={`${effectiveDanger}%`} valueColor={effectiveDanger > 25 ? '#ff8070' : 'var(--parchment)'} />
+        <InfoRow icon={weatherInfo.emoji} label="Weather" value={weatherInfo.name} valueColor={weather === 'storm' ? '#ff9080' : weather === 'fog' ? '#b0b0d0' : 'var(--parchment)'} />
         <InfoRow icon="🍞" label="Food needed" value={`${totalFood}`} valueColor={hasEnoughFood ? '#80d880' : '#ff8070'} />
         {dailyGold > 0 && <InfoRow icon="🪙" label="Wages" value={`${totalGold}g total`} />}
         <div style={{ fontSize: '11px', color: 'var(--parchment-darker)', fontStyle: 'italic' }}>{route.terrainDescription}</div>
@@ -310,7 +352,7 @@ function TravelSidebar({ townId, route, onTravel, onCancel }: {
 
       {!hasEnoughFood && (
         <div style={{ background: 'rgba(138,42,26,0.2)', border: '1px solid var(--red)', borderRadius: '4px', padding: '8px', fontSize: '12px', color: '#ff9080' }}>
-          ⚠️ You need {totalFood} food but only have {vehicle.food}. Guards may desert!
+          ⚠️ You need {totalFood} food but only have {state.player.food}. Guards may desert!
         </div>
       )}
 

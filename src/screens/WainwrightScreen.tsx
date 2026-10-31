@@ -1,10 +1,12 @@
 import { useGame } from '../context/GameContext';
 import { VEHICLES } from '../data/vehicles';
+import { hasSkill } from '../engine/gameEngine';
 import type { VehicleTier } from '../types/game';
 
 export function WainwrightScreen() {
   const { state, upgradeVehicle, setScreen } = useGame();
   const currentTier = state.player.vehicleTier;
+  const bonusSlots = hasSkill(state, 'bulk_trader') ? 5 : 0;
 
   const tiers = ([1, 2, 3, 4] as VehicleTier[]).map(t => VEHICLES[t]);
 
@@ -77,7 +79,7 @@ export function WainwrightScreen() {
 
               {/* Stats */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '14px' }}>
-                <StatRow icon="📦" label="Cargo Capacity" value={`${vehicle.cargoSlots} slots`} />
+                <StatRow icon="📦" label="Cargo Capacity" value={`${vehicle.cargoSlots}${bonusSlots > 0 ? ` +${bonusSlots}` : ''} slots`} />
                 <StatRow icon="🍞" label="Food Upkeep" value={`${vehicle.foodUpkeepPerDay}/day`} />
                 <StatRow icon="🛡️" label="Max Guards" value={`${vehicle.maxGuards}`} />
                 <StatRow icon="🪙" label="Cost" value={vehicle.cost === 0 ? 'Free' : `${vehicle.cost.toLocaleString()} Gold`} />

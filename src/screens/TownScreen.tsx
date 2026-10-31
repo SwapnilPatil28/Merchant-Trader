@@ -1,17 +1,21 @@
 import { useGame } from '../context/GameContext';
 import { TOWNS } from '../data/towns';
-import { calcPrice } from '../engine/gameEngine';
+import { calcPrice, hasSkill } from '../engine/gameEngine';
 import { ITEMS } from '../data/items';
 import type { ItemId } from '../types/game';
 import { useState } from 'react';
 import { VEHICLES } from '../data/vehicles';
 import { getTownImage } from '../data/images';
+import { Sparkline } from '../components/Sparkline';
 
 export function TownScreen() {
-  const { state, setScreen } = useGame();
+  const { state, setScreen, buyEstate } = useGame();
   const town = TOWNS[state.player.currentTownId];
   const market = state.markets[state.player.currentTownId];
   const vehicle = VEHICLES[state.player.vehicleTier];
+  // Bulk Trader skill: +5 cargo slots
+  const bonusSlots = hasSkill(state, 'bulk_trader') ? 5 : 0;
+  const effectiveMaxSlots = vehicle.cargoSlots + bonusSlots;
   const slotsUsed = state.player.inventory.reduce((s, i) => s + i.quantity, 0);
 
   // Use AI-generated town background with fallback gradient
@@ -55,10 +59,10 @@ export function TownScreen() {
         overflow: 'hidden',
       }}>
         {/* Market Panel */}
-        <MarketPanel market={market} slotsUsed={slotsUsed} maxSlots={vehicle.cargoSlots} playerGold={state.player.gold} />
+        <MarketPanel market={market} slotsUsed={slotsUsed} maxSlots={effectiveMaxSlots} playerGold={state.player.gold} />
 
         {/* Player Inventory Panel */}
-        <InventoryPanel slotsUsed={slotsUsed} maxSlots={vehicle.cargoSlots} />
+        <InventoryPanel slotsUsed={slotsUsed} maxSlots={effectiveMaxSlots} />
       </div>
 
       {/* Footer Navigation */}
@@ -70,12 +74,13 @@ export function TownScreen() {
         borderTop: '1px solid var(--panel-border)',
         flexWrap: 'wrap',
       }}>
-        <button className="btn" onClick={() => setScreen('tavern')}>🍺 Tavern <span style={{ fontSize: '12px', opacity: 0.7 }}>(Hire Guards)</span></button>
+        <button className="btn" onClick={() => setScreen('tavern')}>🍺 Tavern <span style={{ fontSize: '12px', opacity: 0.7 }}>(Guards & Contracts)</span></button>
         <button className="btn" onClick={() => setScreen('wainwright')}>🔧 Wainwright <span style={{ fontSize: '12px', opacity: 0.7 }}>(Upgrade Vehicle)</span></button>
+        <button className="btn" onClick={() => setScreen('stats')}>📊 Ledger <span style={{ fontSize: '12px', opacity: 0.7 }}>(Stats & Skills)</span></button>
         <button className="btn btn-gold" onClick={() => setScreen('map')}>🗺️ Open Map</button>
         {state.player.currentTownId === 'capital_city' && state.player.gold >= 100_000 && (
           <button className="btn" style={{ background: 'linear-gradient(180deg, #5a3a00, #3a2000)', borderColor: 'var(--gold-light)' }}
-            onClick={() => setScreen('victory')}>
+            onClick={buyEstate}>
             🏰 Buy Merchant Estate (100,000g)
           </button>
         )}
@@ -90,7 +95,7 @@ function MarketPanel({ market, slotsUsed, maxSlots, playerGold }: {
   market: { supplies: Record<ItemId, number> };
   slotsUsed: number; maxSlots: number; playerGold: number;
 }) {
-  const { buyItem } = useGame();
+  const { buyItem, state } = useGame();
   const [qty, setQty] = useState<Record<ItemId, number>>({} as Record<ItemId, number>);
   const [flash, setFlash] = useState<string>('');
 
@@ -120,6 +125,7 @@ function MarketPanel({ market, slotsUsed, maxSlots, playerGold }: {
               <th>Item</th>
               <th>Stock</th>
               <th>Price</th>
+              <th>Trend</th>
               <th>Qty</th>
               <th></th>
             </tr>
@@ -127,13 +133,15 @@ function MarketPanel({ market, slotsUsed, maxSlots, playerGold }: {
           <tbody>
             {itemsWithStock.map(itemId => {
               const supply = market.supplies[itemId] ?? 0;
-              const price = calcPrice(itemId, supply);
+              const rep = state.player.reputation[state.player.currentTownId] ?? 0;
+              const price = calcPrice(itemId, supply, rep, state.player.skills);
               const item = ITEMS[itemId];
               const q = getQty(itemId);
               const totalCost = price * q;
               const canAfford = playerGold >= totalCost;
               const hasSpace = slotsUsed + q <= maxSlots;
               const rowFlash = flash === itemId;
+              const priceHist = state.priceHistory[state.player.currentTownId]?.[itemId] ?? [];
 
               return (
                 <tr key={itemId} style={{ background: rowFlash ? 'rgba(200,150,42,0.15)' : undefined }}>
@@ -144,6 +152,9 @@ function MarketPanel({ market, slotsUsed, maxSlots, playerGold }: {
                   <td style={{ fontSize: '13px' }}>{supply}</td>
                   <td>
                     <PriceDisplay price={price} basePrice={item.basePrice} />
+                  </td>
+                  <td style={{ width: '50px' }}>
+                    <Sparkline data={priceHist} />
                   </td>
                   <td style={{ width: '60px' }}>
                     <input
@@ -225,7 +236,8 @@ function InventoryPanel({ slotsUsed, maxSlots }: { slotsUsed: number; maxSlots: 
               {state.player.inventory.map(slot => {
                 const item = ITEMS[slot.itemId];
                 const marketSupply = market.supplies[slot.itemId] ?? 1;
-                const sellPrice = calcPrice(slot.itemId, marketSupply);
+                const rep = state.player.reputation[state.player.currentTownId] ?? 0;
+                const sellPrice = calcPrice(slot.itemId, marketSupply, rep);
                 const q = getQty(slot.itemId);
                 const profitPer = sellPrice - slot.purchasePrice;
                 const totalProfit = profitPer * q;

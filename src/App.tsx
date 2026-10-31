@@ -1,6 +1,7 @@
 import { GameProvider, useGame } from './context/GameContext';
 import { HUD } from './components/HUD';
 import { MessageLog } from './components/MessageLog';
+import { ToastContainer, useMessageLogToasts } from './components/Toasts';
 import { TitleScreen } from './screens/TitleScreen';
 import { TownScreen } from './screens/TownScreen';
 import { MapScreen } from './screens/MapScreen';
@@ -9,11 +10,15 @@ import { EventScreen } from './screens/EventScreen';
 import { TavernScreen } from './screens/TavernScreen';
 import { WainwrightScreen } from './screens/WainwrightScreen';
 import { GameOverScreen, VictoryScreen } from './screens/GameOverVictoryScreens';
+import { StatsScreen } from './screens/StatsScreen';
 
 function GameRouter() {
   const { state } = useGame();
 
   const showHUD = state.screen !== 'title' && state.screen !== 'game_over' && state.screen !== 'victory';
+
+  // Auto-show toasts for new messages
+  useMessageLogToasts(state.messageLog, state.screen !== 'title');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
@@ -25,6 +30,7 @@ function GameRouter() {
         {state.screen === 'travel' && <TravelScreen />}
         {state.screen === 'tavern' && <TavernScreen />}
         {state.screen === 'wainwright' && <WainwrightScreen />}
+        {state.screen === 'stats' && <StatsScreen />}
         {state.screen === 'game_over' && <GameOverScreen />}
         {state.screen === 'victory' && <VictoryScreen />}
       </div>
@@ -32,6 +38,9 @@ function GameRouter() {
 
       {/* Event overlay */}
       {state.pendingEvent && <EventScreen />}
+
+      {/* Toast notifications */}
+      <ToastContainer />
     </div>
   );
 }
@@ -43,4 +52,3 @@ export default function App() {
     </GameProvider>
   );
 }
-

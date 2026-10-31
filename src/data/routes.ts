@@ -58,6 +58,70 @@ export const ROUTES: Route[] = [
     dangerRating: 18,
     terrainDescription: 'The Grand Merchant Way. Patrols keep it mostly safe.',
   },
+  // ─── NEW TOWN ROUTES ──────────────────────────────────
+  {
+    from: 'port_harbor',
+    to: 'capital_city',
+    distance: 3,
+    dangerRating: 12,
+    terrainDescription: 'The Coastal Highway. Well-patrolled and bustling with trade.',
+  },
+  {
+    from: 'port_harbor',
+    to: 'desert_bazaar',
+    distance: 5,
+    dangerRating: 25,
+    terrainDescription: 'The Sea-Sand Passage. Exposed cliffs give way to arid dunes.',
+  },
+  {
+    from: 'port_harbor',
+    to: 'valley_farm',
+    distance: 3,
+    dangerRating: 10,
+    terrainDescription: 'A pleasant riverside road. Fishermen wave as you pass.',
+  },
+  {
+    from: 'monastery',
+    to: 'valley_farm',
+    distance: 3,
+    dangerRating: 8,
+    terrainDescription: 'The Pilgrim\'s Path. Peaceful and well-maintained by monks.',
+  },
+  {
+    from: 'monastery',
+    to: 'capital_city',
+    distance: 4,
+    dangerRating: 14,
+    terrainDescription: 'The Abbey Road. Rolling hills and occasional pilgrims.',
+  },
+  {
+    from: 'monastery',
+    to: 'deepwood_camp',
+    distance: 4,
+    dangerRating: 18,
+    terrainDescription: 'A narrow trail through the forest foothills. Quiet but eerie.',
+  },
+  {
+    from: 'border_fort',
+    to: 'mountain_forge',
+    distance: 3,
+    dangerRating: 28,
+    terrainDescription: 'The Iron Road. Military supply line through hostile passes.',
+  },
+  {
+    from: 'border_fort',
+    to: 'deepwood_camp',
+    distance: 3,
+    dangerRating: 35,
+    terrainDescription: 'A treacherous frontier path. Bandits, wolves, and worse.',
+  },
+  {
+    from: 'border_fort',
+    to: 'capital_city',
+    distance: 5,
+    dangerRating: 22,
+    terrainDescription: 'The King\'s March. Long but strategically important.',
+  },
 ];
 
 // Build a lookup map: "townA:townB" -> Route (normalized alphabetically)
@@ -74,10 +138,13 @@ export function getRoute(a: TownId, b: TownId): Route | null {
 
 // Map positions for the world map display (normalized 0-1)
 export const TOWN_MAP_POSITIONS: Record<TownId, { x: number; y: number }> = {
-  valley_farm:    { x: 0.30, y: 0.45 },
-  mountain_forge: { x: 0.20, y: 0.22 },
-  desert_bazaar:  { x: 0.65, y: 0.72 },
-  deepwood_camp:  { x: 0.18, y: 0.65 },
-  capital_city:   { x: 0.55, y: 0.30 },
+  valley_farm:    { x: 0.28, y: 0.42 },
+  mountain_forge: { x: 0.22, y: 0.18 },
+  desert_bazaar:  { x: 0.72, y: 0.70 },
+  deepwood_camp:  { x: 0.15, y: 0.65 },
+  capital_city:   { x: 0.50, y: 0.32 },
+  port_harbor:    { x: 0.52, y: 0.60 },
+  monastery:      { x: 0.32, y: 0.72 },
+  border_fort:    { x: 0.80, y: 0.22 },
 };
 

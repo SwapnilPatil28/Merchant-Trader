@@ -1,6 +1,7 @@
 import { useGame } from '../context/GameContext';
 import { TOWNS } from '../data/towns';
 import { VEHICLES } from '../data/vehicles';
+import { WEATHER_INFO } from '../engine/gameEngine';
 import { useEffect, useRef, useState } from 'react';
 
 export function TravelScreen() {
@@ -31,6 +32,10 @@ export function TravelScreen() {
   const progress = ((travel.totalDays - travel.daysRemaining) / travel.totalDays) * 100;
   const guardPower = state.player.guards.reduce((s, g) => s + g.power, 0);
 
+  // Weather info
+  const weather = travel.weather;
+  const weatherInfo = WEATHER_INFO[weather];
+
   // Wagon animation dots
   const wagonDots = '• '.repeat(Math.max(1, Math.floor(animFrame % 4) + 1));
 
@@ -51,6 +56,9 @@ export function TravelScreen() {
         <h1 style={{ fontSize: '2rem' }}>🛤️ On the Road</h1>
         <p style={{ color: 'var(--parchment-darker)', fontStyle: 'italic', fontSize: '14px' }}>
           {origin.name} → {destination.name}
+        </p>
+        <p style={{ fontSize: '13px', color: weather === 'storm' ? '#ff9080' : weather === 'fog' ? '#b0b0d0' : 'var(--gold-dark)' }}>
+          {weatherInfo.emoji} {weatherInfo.name} — {weatherInfo.description}
         </p>
       </div>
 

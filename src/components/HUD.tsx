@@ -1,5 +1,6 @@
 import { useGame } from '../context/GameContext';
 import { VEHICLES } from '../data/vehicles';
+import { hasSkill } from '../engine/gameEngine';
 
 const SEASON_EMOJI: Record<string, string> = {
   Spring: '🌸', Summer: '☀️', Autumn: '🍂', Winter: '❄️',
@@ -9,6 +10,8 @@ export function HUD() {
   const { state } = useGame();
   const { player, currentDay, season, dayOfSeason } = state;
   const vehicle = VEHICLES[player.vehicleTier];
+  const bonusSlots = hasSkill(state, 'bulk_trader') ? 5 : 0;
+  const maxSlots = vehicle.cargoSlots + bonusSlots;
   const guardPower = player.guards.reduce((s, g) => s + g.power, 0);
   const slotsUsed = player.inventory.reduce((s, i) => s + i.quantity, 0);
 
@@ -34,9 +37,10 @@ export function HUD() {
         <HUDStat emoji="🪙" label="Gold" value={`${player.gold.toLocaleString()}g`} color="var(--gold-light)" />
         <HUDStat emoji="🍞" label="Food" value={`${player.food}`} color={player.food < 5 ? '#ff8070' : 'var(--parchment)'} />
         <HUDStat emoji={vehicle.emoji} label="Vehicle" value={vehicle.name} />
-        <HUDStat emoji="📦" label="Cargo" value={`${slotsUsed}/${vehicle.cargoSlots}`} color={slotsUsed >= vehicle.cargoSlots ? '#ff8070' : 'var(--parchment)'} />
+        <HUDStat emoji="📦" label="Cargo" value={`${slotsUsed}/${maxSlots}`} color={slotsUsed >= maxSlots ? '#ff8070' : 'var(--parchment)'} />
         <HUDStat emoji="🛡️" label="Guards" value={`${player.guards.length}/${vehicle.maxGuards}`} />
         {guardPower > 0 && <HUDStat emoji="⚔️" label="Power" value={`${guardPower}`} color="var(--gold-light)" />}
+        <HUDStat emoji="⭐" label="Level" value={`${state.player.level}`} color="var(--gold-light)" />
         <HUDStat emoji={SEASON_EMOJI[season]} label="Season" value={season} />
         <HUDStat emoji="📅" label="Day" value={`${currentDay} (${dayOfSeason + 1}/30)`} />
       </div>

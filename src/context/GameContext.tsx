@@ -14,6 +14,9 @@ import {
   performDayTick,
   checkGameOver,
   buyFood,
+  acceptContract,
+  generateContracts,
+  learnSkill,
 } from '../engine/gameEngine';
 
 // ─── LocalStorage Save/Load ─────────────────────────────────────────────
@@ -55,6 +58,25 @@ function loadFromStorage(): GameState | null {
     const s = data.state;
     if (!s.player || !s.markets || !s.currentDay) return null;
 
+    // Migrate older saves that may be missing new fields
+    s.player.totalTradesMade ??= 0;
+    s.player.totalGoldEarned ??= 0;
+    s.player.totalGoldSpent ??= 0;
+    s.player.totalCargoLost ??= 0;
+    s.player.totalGuardsLost ??= 0;
+    s.player.totalEventsfaced ??= 0;
+    s.player.totalContractsCompleted ??= 0;
+    s.player.townsVisited ??= [s.player.currentTownId];
+    s.player.reputation ??= {};
+    s.player.skills ??= [];
+    s.player.xp ??= 0;
+    s.player.level ??= 1;
+    s.routeWeather ??= {};
+    s.priceHistory ??= {} as typeof s.priceHistory;
+    s.contracts ??= [];
+    s.activeContracts ??= [];
+    s.activeWorldEvents ??= [];
+
     // Clear any pending events from a mid-travel save (they hold function refs
     // that can't survive serialization)
     s.pendingEvent = null;
@@ -94,7 +116,11 @@ type Action =
   | { type: 'RESOLVE_EVENT'; resolution: EventResolution }
   | { type: 'DAY_TICK' }
   | { type: 'RESET' }
-  | { type: 'LOAD_SAVE'; savedState: GameState };
+  | { type: 'LOAD_SAVE'; savedState: GameState }
+  | { type: 'ACCEPT_CONTRACT'; contractId: string }
+  | { type: 'REFRESH_CONTRACTS' }
+  | { type: 'LEARN_SKILL'; skillId: string }
+  | { type: 'BUY_ESTATE' };
 
 function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -138,6 +164,26 @@ function reducer(state: GameState, action: Action): GameState {
     }
     case 'LOAD_SAVE':
       return action.savedState;
+    case 'ACCEPT_CONTRACT': {
+      const { state: newState } = acceptContract(state, action.contractId);
+      return newState;
+    }
+    case 'REFRESH_CONTRACTS':
+      return { ...state, contracts: generateContracts(state) };
+    case 'LEARN_SKILL': {
+      const { state: newState } = learnSkill(state, action.skillId);
+      return newState;
+    }
+    case 'BUY_ESTATE': {
+      if (state.player.gold < 100_000 || state.player.currentTownId !== 'capital_city') return state;
+      const messages = [...state.messageLog, '🏰 You purchased a grand Merchant Estate in the Capital City! You win!'];
+      return {
+        ...state,
+        screen: 'victory',
+        player: { ...state.player, gold: state.player.gold - 100_000 },
+        messageLog: messages.slice(-20),
+      };
+    }
     default:
       return state;
   }
@@ -161,6 +207,10 @@ interface GameContextValue {
   reset: () => void;
   hasSave: boolean;
   loadSave: () => void;
+  acceptContract: (contractId: string) => void;
+  refreshContracts: () => void;
+  learnSkill: (skillId: string) => void;
+  buyEstate: () => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -201,6 +251,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'LOAD_SAVE', savedState: saved });
       }
     }, []),
+    acceptContract: useCallback((contractId: string) => dispatch({ type: 'ACCEPT_CONTRACT', contractId }), []),
+    refreshContracts: useCallback(() => dispatch({ type: 'REFRESH_CONTRACTS' }), []),
+    learnSkill: useCallback((skillId: string) => dispatch({ type: 'LEARN_SKILL', skillId }), []),
+    buyEstate: useCallback(() => dispatch({ type: 'BUY_ESTATE' }), []),
   };
 
   return <GameContext.Provider value={ctx}>{children}</GameContext.Provider>;

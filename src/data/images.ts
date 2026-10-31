@@ -6,9 +6,11 @@ const TOWN_IMAGES: Record<TownId, string> = {
   desert_bazaar: '/images/towns/desert_bazaar.jpg',
   deepwood_camp: '/images/towns/deepwood_camp.jpg',
   capital_city: '/images/towns/capital_city.jpg',
+  port_harbor: '/images/towns/port_harbor.jpg',
+  monastery: '/images/towns/monastery.jpg',
+  border_fort: '/images/towns/border_fort.jpg',
 };
 
 export function getTownImage(townId: TownId): string {
   return TOWN_IMAGES[townId] ?? '';
 }
-
