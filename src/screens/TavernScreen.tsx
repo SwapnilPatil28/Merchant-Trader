@@ -42,7 +42,7 @@ export function TavernScreen() {
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      background: `linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), linear-gradient(160deg, #2a1608, #3a2010, #1a0e06), url(/images/towns/tavern_interior.jpg) center/cover`,
+      background: `linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), linear-gradient(160deg, #2a1608, #3a2010, #1a0e06), url(./images/towns/tavern_interior.jpg) center/cover`,
       overflow: 'hidden',
     }}>
       {/* Header */}

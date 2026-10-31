@@ -63,7 +63,7 @@ export function MapScreen() {
           margin: '16px',
           border: '3px solid var(--gold-dark)',
           borderRadius: '8px',
-          background: `radial-gradient(ellipse, rgba(58,42,20,0.8) 0%, rgba(30,20,10,0.9) 100%), url(/images/ui/map_bg.jpg) center/cover`,
+          background: `radial-gradient(ellipse, rgba(58,42,20,0.8) 0%, rgba(30,20,10,0.9) 100%), url(./images/ui/map_bg.jpg) center/cover`,
           boxShadow: 'inset 0 0 40px rgba(0,0,0,0.6), 0 0 20px rgba(200,150,42,0.15)',
           overflow: 'hidden',
         }}>

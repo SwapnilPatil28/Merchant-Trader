@@ -19,7 +19,7 @@ export function TitleScreen() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%), url(/images/ui/title_bg.jpg) center/cover`,
+      background: `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%), url(./images/ui/title_bg.jpg) center/cover`,
       textAlign: 'center',
       gap: '24px',
       padding: '40px',

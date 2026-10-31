@@ -25,7 +25,7 @@ function useBackgroundMusic() {
 
   // Create the audio element once
   useEffect(() => {
-    const audio = new Audio('/audio/Caravan_at_Twilight.mp3');
+    const audio = new Audio('./audio/Caravan_at_Twilight.mp3');
     audio.loop = true;
     audio.volume = 0.35;
     audio.preload = 'auto';

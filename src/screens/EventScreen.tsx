@@ -4,14 +4,14 @@ import type { EventResolution } from '../types/game';
 
 // Map event IDs to image files
 const EVENT_IMAGES: Record<string, string> = {
-  bandit_ambush: '/images/events/bandit.jpg',
-  wolf_pack: '/images/events/wolves.jpg',
-  corrupt_guard: '/images/events/corrupt_guard.jpg',
-  blizzard: '/images/events/blizzard.jpg',
-  stranded_traveler: '/images/events/traveler.jpg',
-  hidden_treasure: '/images/events/treasure.jpg',
-  wandering_merchant: '/images/events/merchant.jpg',
-  broken_wheel: '/images/events/broken_wheel.jpg',
+  bandit_ambush: './images/events/bandit.jpg',
+  wolf_pack: './images/events/wolves.jpg',
+  corrupt_guard: './images/events/corrupt_guard.jpg',
+  blizzard: './images/events/blizzard.jpg',
+  stranded_traveler: './images/events/traveler.jpg',
+  hidden_treasure: './images/events/treasure.jpg',
+  wandering_merchant: './images/events/merchant.jpg',
+  broken_wheel: './images/events/broken_wheel.jpg',
 };
 
 type Phase = 'choosing' | 'outcome';
